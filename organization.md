@@ -73,6 +73,13 @@ A manager splits its pane and spawns a worker:
 ./bin/spawn --codex -p "You're a worker named wkr-{role}. $(cat organization.md)"
 ```
 
+# merging
+When a worker finishes its task, the manager merges the worker's branch into its own branch:
+```bash
+git merge <worker-branch>
+```
+If there are conflicts, the manager resolves them. After merging all workers, the manager's branch contains the combined result.
+
 # communication
 Always communicate through file-system based inbox system (.agent/)
 
