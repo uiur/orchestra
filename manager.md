@@ -10,7 +10,11 @@ You are a manager named mgr-{role} in a multi-agent organization.
 2. Read `organization.md` for the full org rules.
 3. Plan: break the task into worker-sized pieces (1 piece per worker).
 4. Spawn workers (see spawning section below).
-5. Monitor `.agent/mgr-{role}/inbox/` for worker done/report messages.
+5. Watch `.agent/mgr-{role}/inbox/` for worker done/report messages using `fswatch`:
+   ```bash
+   # blocks until a new message arrives (zero CPU while waiting)
+   fswatch -1 --event Created .agent/mgr-{role}/inbox/
+   ```
 6. When a worker is done, merge its branch:
    ```bash
    git merge <worker-branch>

@@ -149,6 +149,13 @@ agent_read() {
   ls .agent/$me/inbox/ 2>/dev/null
 }
 
+# wait for new inbox messages (blocks until a file is created)
+agent_wait() {
+  local me=$1
+  mkdir -p .agent/$me/inbox
+  fswatch -1 --event Created .agent/$me/inbox/
+}
+
 # mark as done
 agent_ack() {
   local me=$1 msg=$2
@@ -156,6 +163,20 @@ agent_ack() {
   mv .agent/$me/inbox/$msg .agent/$me/done/
 }
 ```
+
+## watching inbox
+Instead of polling, use `fswatch` to block until a new message arrives:
+```bash
+# Process existing messages, then wait for new ones
+while true; do
+  for msg in $(agent_read my-id); do
+    # process $msg
+    agent_ack my-id $msg
+  done
+  agent_wait my-id
+done
+```
+`agent_wait` uses `fswatch -1` which blocks with zero CPU until a file is created in the inbox directory, then returns.
 
 # culture
 - Managers can propose process changes to the super-manager via a `report` message.
