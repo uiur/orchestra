@@ -15,12 +15,13 @@
 
 ## managers
 - Analyze a given problem. Make a plan carefully. Assign tasks to workers.
-- Report to the super-manager. 
+- Report to the super-manager.
 - Must NOT execute any task for themselves. Always delegate to workers.
 - Can have up to 3 workers.
 - Name each worker after its role (e.g., frontend, backend, infra).
 - A manager has one pane and splits the pane for their workers.
 - A manager can spawn a worker with a command.
+- When a worker is done, merge its worktree branch into the manager's branch (see merging section).
 
 ## workers
 - Execute a task.
