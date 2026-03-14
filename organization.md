@@ -141,3 +141,11 @@ agent_ack() {
   mv .agent/$me/inbox/$msg .agent/$me/done/
 }
 ```
+
+# culture
+- Managers can propose process changes to the super-manager via a `report` message.
+- The super-manager can propose process changes to the human via a `report` message.
+- Only the human can approve changes to `organization.md`.
+- Only the super-manager can edit `organization.md`, and only after human approval.
+- No other agent may modify `organization.md`.
+- After completing a task, every agent reflects on what went well and what could be improved. Managers include this reflection in their `done` message to the super-manager. If the reflection surfaces a process improvement, it becomes a proposal.
