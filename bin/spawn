@@ -3,6 +3,26 @@
 
 set -e
 
+# Derive MULTI_AGENT_HOME if not already set (supports symlinked invocation)
+if [ -z "$MULTI_AGENT_HOME" ]; then
+  _resolve_path() {
+    local path="$1"
+    while [ -L "$path" ]; do
+      local dir="$(cd "$(dirname "$path")" && pwd)"
+      local link="$(readlink "$path")"
+      case "$link" in
+        /*) path="$link" ;;
+        *)  path="$dir/$link" ;;
+      esac
+    done
+    echo "$(cd "$(dirname "$path")" && pwd)/$(basename "$path")"
+  }
+  _REAL_SCRIPT="$(_resolve_path "$0")"
+  MULTI_AGENT_HOME="$(cd "$(dirname "$_REAL_SCRIPT")/.." && pwd)"
+  export MULTI_AGENT_HOME
+  unset -f _resolve_path
+fi
+
 usage() {
   cat <<'USAGE'
 Usage: worktree_agent [branch] [--assistant claude|codex] [--codex|--claude] [-p|--prompt PROMPT] [-f|--prompt-file FILE]

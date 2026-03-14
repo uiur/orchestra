@@ -74,7 +74,7 @@ SM_PANE=$TMUX_PANE
 
 # Manager 1: split right from super-manager's pane
 MGR1_PANE=$(spawn_pane -h $SM_PANE 75 mgr-{role})
-tmux send-keys -t $MGR1_PANE './bin/spawn mgr-{role} --claude -p "$(cat prompt/manager.md)"' Enter
+tmux send-keys -t $MGR1_PANE '$MULTI_AGENT_HOME/bin/spawn mgr-{role} --claude -f $MULTI_AGENT_HOME/prompt/manager.md' Enter
 
 # Manager 2: split right from manager 1
 MGR2_PANE=$(spawn_pane -h $MGR1_PANE 67 mgr-{role})
@@ -90,7 +90,7 @@ MY_PANE=$TMUX_PANE  # set automatically by tmux in each pane's environment
 
 # Worker 1: split below
 WKR1_PANE=$(spawn_pane -v $MY_PANE 75 wkr-{name})
-tmux send-keys -t $WKR1_PANE './bin/spawn wkr-{name} --codex -p "..."' Enter
+tmux send-keys -t $WKR1_PANE '$MULTI_AGENT_HOME/bin/spawn wkr-{name} --codex -p "..."' Enter
 
 # Worker 2: split below worker 1
 WKR2_PANE=$(spawn_pane -v $WKR1_PANE 67 wkr-{name})
@@ -118,18 +118,18 @@ tmux respawn-pane -t $(find_pane wkr-api)
 ```
 
 # spawn
-`./bin/spawn` creates a git worktree (isolated branch copy of the repo), launches an AI assistant inside it, and cleans up the worktree on exit. Each spawned agent works in its own worktree, so agents never conflict on file changes.
+`$MULTI_AGENT_HOME/bin/spawn` creates a git worktree (isolated branch copy of the repo), launches an AI assistant inside it, and cleans up the worktree on exit. Each spawned agent works in its own worktree, so agents never conflict on file changes.
 
 ## manager
 The super-manager splits a column for the manager in the current window (see window section) and spawns it:
 ```bash
-./bin/spawn mgr-{role} --claude -p "$(cat prompt/manager.md)"
+$MULTI_AGENT_HOME/bin/spawn mgr-{role} --claude -f $MULTI_AGENT_HOME/prompt/manager.md
 ```
 
 ## worker
 A manager splits its column vertically and spawns a worker:
 ```bash
-./bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: ..."
+$MULTI_AGENT_HOME/bin/spawn wkr-{name} --codex -p "$(cat $MULTI_AGENT_HOME/prompt/worker.md) Your task: ..."
 ```
 
 # merging

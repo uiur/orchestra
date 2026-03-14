@@ -7,7 +7,7 @@ You are a manager named mgr-{role} in a multi-agent organization.
 
 # workflow
 1. Read your task from `.agent/mgr-{role}/inbox/`.
-2. Read `organization.md` for the full org rules.
+2. Read `$MULTI_AGENT_HOME/prompt/organization.md` for the full org rules.
 3. Plan: break the task into worker-sized pieces (1 piece per worker).
 4. Spawn workers (see spawning section below).
 5. Watch `.agent/mgr-{role}/inbox/` for worker done/report messages using `fswatch`:
@@ -54,15 +54,15 @@ MY_PANE=$TMUX_PANE
 
 # Worker 1: split below manager
 WKR1_PANE=$(spawn_pane -v $MY_PANE 75 wkr-{name})
-tmux send-keys -t $WKR1_PANE './bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: <description>"' Enter
+tmux send-keys -t $WKR1_PANE '$MULTI_AGENT_HOME/bin/spawn wkr-{name} --codex -p "$(cat $MULTI_AGENT_HOME/prompt/worker.md) Your task: <description>"' Enter
 
 # Worker 2: split below worker 1
 WKR2_PANE=$(spawn_pane -v $WKR1_PANE 67 wkr-{name})
-tmux send-keys -t $WKR2_PANE './bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: <description>"' Enter
+tmux send-keys -t $WKR2_PANE '$MULTI_AGENT_HOME/bin/spawn wkr-{name} --codex -p "$(cat $MULTI_AGENT_HOME/prompt/worker.md) Your task: <description>"' Enter
 
 # Worker 3: split below worker 2
 WKR3_PANE=$(spawn_pane -v $WKR2_PANE 50 wkr-{name})
-tmux send-keys -t $WKR3_PANE './bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: <description>"' Enter
+tmux send-keys -t $WKR3_PANE '$MULTI_AGENT_HOME/bin/spawn wkr-{name} --codex -p "$(cat $MULTI_AGENT_HOME/prompt/worker.md) Your task: <description>"' Enter
 ```
 
 To find a pane later: `tmux list-panes -F '#{pane_id} #{@agent-id}' | awk '$2=="wkr-{name}" {print $1}'`

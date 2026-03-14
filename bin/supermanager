@@ -3,19 +3,39 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-SUPERMANAGER_PROMPT="$REPO_ROOT/prompt/supermanager.md"
-ORGANIZATION="$REPO_ROOT/prompt/organization.md"
+# Resolve symlinks to find the real script location (portable, no GNU coreutils needed)
+resolve_path() {
+  local path="$1"
+  while [ -L "$path" ]; do
+    local dir="$(cd "$(dirname "$path")" && pwd)"
+    local link="$(readlink "$path")"
+    # Handle relative symlink targets
+    case "$link" in
+      /*) path="$link" ;;
+      *)  path="$dir/$link" ;;
+    esac
+  done
+  echo "$(cd "$(dirname "$path")" && pwd)/$(basename "$path")"
+}
+
+REAL_SCRIPT="$(resolve_path "$0")"
+MULTI_AGENT_HOME="$(cd "$(dirname "$REAL_SCRIPT")/.." && pwd)"
+export MULTI_AGENT_HOME
+
+PROJECT_DIR="$(pwd)"
+
+SUPERMANAGER_PROMPT="$MULTI_AGENT_HOME/prompt/supermanager.md"
+ORGANIZATION="$MULTI_AGENT_HOME/prompt/organization.md"
 
 SESSION_NAME="supermanager"
 
-CMD="cd '$REPO_ROOT' && claude --dangerously-skip-permissions \"\$(cat '$SUPERMANAGER_PROMPT') \$(cat '$ORGANIZATION')\""
+CMD="cd '$PROJECT_DIR' && export MULTI_AGENT_HOME='$MULTI_AGENT_HOME' && claude --dangerously-skip-permissions \"\$(cat '$SUPERMANAGER_PROMPT') \$(cat '$ORGANIZATION')\""
 
 # Create a new tmux window (or session if not in tmux)
 if [ -n "$TMUX" ]; then
+  tmux set-environment MULTI_AGENT_HOME "$MULTI_AGENT_HOME"
   tmux new-window -n "$SESSION_NAME" "$CMD"
 else
-  tmux new-session -d -s "$SESSION_NAME" "$CMD"
+  tmux new-session -d -s "$SESSION_NAME" -e MULTI_AGENT_HOME="$MULTI_AGENT_HOME" "$CMD"
   tmux attach -t "$SESSION_NAME"
 fi
