@@ -1,0 +1,21 @@
+#!/bin/bash
+# Launch a claude supermanager in a new tmux window
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SUPERMANAGER_PROMPT="$REPO_ROOT/prompt/supermanager.md"
+ORGANIZATION="$REPO_ROOT/prompt/organization.md"
+
+SESSION_NAME="supermanager"
+
+CMD="cd '$REPO_ROOT' && claude --dangerously-skip-permissions \"\$(cat '$SUPERMANAGER_PROMPT') \$(cat '$ORGANIZATION')\""
+
+# Create a new tmux window (or session if not in tmux)
+if [ -n "$TMUX" ]; then
+  tmux new-window -n "$SESSION_NAME" "$CMD"
+else
+  tmux new-session -d -s "$SESSION_NAME" "$CMD"
+  tmux attach -t "$SESSION_NAME"
+fi
