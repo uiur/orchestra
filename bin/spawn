@@ -65,11 +65,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+UNIQUE_SUFFIX=$(openssl rand -hex 4)
+
 if [ -z "$BRANCH_NAME" ]; then
   # Generate random branch name with date prefix: YYYYMMDD-random
   DATE_PREFIX=$(date +%Y%m%d)
-  RANDOM_SUFFIX=$(openssl rand -hex 4)
-  BRANCH_NAME="${DATE_PREFIX}-${RANDOM_SUFFIX}"
+  BRANCH_NAME="${DATE_PREFIX}-${UNIQUE_SUFFIX}"
+else
+  BRANCH_NAME="${BRANCH_NAME}-${UNIQUE_SUFFIX}"
 fi
 
 if [ -z "$ASSISTANT" ]; then
