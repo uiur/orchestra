@@ -38,17 +38,49 @@ Everything runs in a single tmux window. The layout is **column-per-manager**: s
 
 Use stable pane IDs (`#{pane_id}`, e.g. `%0`, `%1`) instead of numeric indices, because indices shift as panes are added.
 
+Tag every pane with a custom `@agent-id` option for reliable identification. Pane titles are unreliable (the shell's prompt overwrites them), but `@agent-id` survives pane kills, respawns, and shell activity.
+
+## pane helpers
+```bash
+# Create a pane and tag it with @agent-id
+spawn_pane() {
+  local direction=$1 target=$2 percent=$3 agent_id=$4
+  local new_pane
+  new_pane=$(tmux split-window $direction -t "$target" -p "$percent" -P -F '#{pane_id}')
+  [ -z "$new_pane" ] && return 1
+  tmux set-option -p -t "$new_pane" @agent-id "$agent_id"
+  tmux set-option -p -t "$new_pane" remain-on-exit on
+  echo "$new_pane"
+}
+
+# Find a pane by its @agent-id
+find_pane() {
+  tmux list-panes -F '#{pane_id} #{@agent-id}' | awk -v id="$1" '$2==id {print $1}'
+}
+```
+
+## split percentages
+To get N equal-sized parts, each successive split uses:
+```
+Split 1: -p 75   (4 parts) or -p 67 (3 parts) or -p 50 (2 parts)
+Split 2: -p 67   (4 parts) or -p 50 (3 parts)
+Split 3: -p 50   (4 parts)
+```
+Formula: split *i* of *N−1* → `-p $((100 * (N-i) / (N-i+1)))`
+
 ## super-manager: spawning managers
 ```bash
+SM_PANE=$TMUX_PANE
+
 # Manager 1: split right from super-manager's pane
-MGR1_PANE=$(tmux split-window -h -t $SM_PANE -p 75 -P -F '#{pane_id}')
+MGR1_PANE=$(spawn_pane -h $SM_PANE 75 mgr-{role})
 tmux send-keys -t $MGR1_PANE './bin/spawn mgr-{role} --claude -p "$(cat prompt/manager.md)"' Enter
 
 # Manager 2: split right from manager 1
-MGR2_PANE=$(tmux split-window -h -t $MGR1_PANE -p 66 -P -F '#{pane_id}')
+MGR2_PANE=$(spawn_pane -h $MGR1_PANE 67 mgr-{role})
 
 # Manager 3: split right from manager 2
-MGR3_PANE=$(tmux split-window -h -t $MGR2_PANE -p 50 -P -F '#{pane_id}')
+MGR3_PANE=$(spawn_pane -h $MGR2_PANE 50 mgr-{role})
 ```
 
 ## manager: spawning workers
@@ -57,20 +89,32 @@ A manager splits its own pane vertically to stack workers below it:
 MY_PANE=$TMUX_PANE  # set automatically by tmux in each pane's environment
 
 # Worker 1: split below
-WKR1_PANE=$(tmux split-window -v -t $MY_PANE -p 75 -P -F '#{pane_id}')
+WKR1_PANE=$(spawn_pane -v $MY_PANE 75 wkr-{name})
 tmux send-keys -t $WKR1_PANE './bin/spawn wkr-{name} --codex -p "..."' Enter
 
 # Worker 2: split below worker 1
-WKR2_PANE=$(tmux split-window -v -t $WKR1_PANE -p 66 -P -F '#{pane_id}')
+WKR2_PANE=$(spawn_pane -v $WKR1_PANE 67 wkr-{name})
 
 # Worker 3: split below worker 2
-WKR3_PANE=$(tmux split-window -v -t $WKR2_PANE -p 50 -P -F '#{pane_id}')
+WKR3_PANE=$(spawn_pane -v $WKR2_PANE 50 wkr-{name})
 ```
 
 ## navigating
 ```bash
-tmux list-panes -F '#{pane_id} #{pane_current_command} #{pane_title}'
-tmux select-pane -t %5    # jump to a specific pane by stable ID
+# List all panes with their agent IDs
+tmux list-panes -F '#{pane_id} #{@agent-id} #{pane_current_command}'
+
+# Jump to a pane by stable ID
+tmux select-pane -t %5
+
+# Find a pane by agent name
+find_pane wkr-api
+
+# Check for crashed panes
+tmux list-panes -F '#{pane_id} #{@agent-id} dead=#{pane_dead}' | grep 'dead=1'
+
+# Respawn a crashed pane (preserves @agent-id)
+tmux respawn-pane -t $(find_pane wkr-api)
 ```
 
 # spawn

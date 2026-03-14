@@ -133,6 +133,13 @@ git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"
 # Symlink .agent so the worktree can access the shared inbox system
 ln -sfn "${MAIN_REPO}/.agent" "${WORKTREE_PATH}/.agent"
 
+# Tag this pane with @agent-id if running inside tmux
+if [ -n "$TMUX_PANE" ]; then
+  # Extract agent ID from branch name (strip the random suffix)
+  AGENT_ID="${BRANCH_NAME%-*}"
+  tmux set-option -p -t "$TMUX_PANE" @agent-id "$AGENT_ID"
+fi
+
 # Change to worktree and launch assistant
 cd "$WORKTREE_PATH"
 "${LAUNCH_CMD[@]}"

@@ -36,26 +36,38 @@ You are a manager named mgr-{role} in a multi-agent organization.
    ```
 
 # spawning workers
-Stack workers vertically below your pane (all in the same column). Use stable pane IDs.
+Stack workers vertically below your pane (all in the same column). Tag each pane with `@agent-id` for reliable identification.
 
 ```bash
-MY_PANE=$(tmux display-message -p '#{pane_id}')
+# Helper: create a pane and tag it
+spawn_pane() {
+  local direction=$1 target=$2 percent=$3 agent_id=$4
+  local new_pane
+  new_pane=$(tmux split-window $direction -t "$target" -p "$percent" -P -F '#{pane_id}')
+  [ -z "$new_pane" ] && return 1
+  tmux set-option -p -t "$new_pane" @agent-id "$agent_id"
+  tmux set-option -p -t "$new_pane" remain-on-exit on
+  echo "$new_pane"
+}
+
+MY_PANE=$TMUX_PANE
 
 # Worker 1: split below manager
-tmux split-window -v -t $MY_PANE -p 75
-WKR1_PANE=$(tmux display-message -p '#{pane_id}')
+WKR1_PANE=$(spawn_pane -v $MY_PANE 75 wkr-{name})
 tmux send-keys -t $WKR1_PANE './bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: <description>"' Enter
 
 # Worker 2: split below worker 1
-tmux split-window -v -t $WKR1_PANE -p 66
-WKR2_PANE=$(tmux display-message -p '#{pane_id}')
+WKR2_PANE=$(spawn_pane -v $WKR1_PANE 67 wkr-{name})
 tmux send-keys -t $WKR2_PANE './bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: <description>"' Enter
 
 # Worker 3: split below worker 2
-tmux split-window -v -t $WKR2_PANE -p 50
-WKR3_PANE=$(tmux display-message -p '#{pane_id}')
+WKR3_PANE=$(spawn_pane -v $WKR2_PANE 50 wkr-{name})
 tmux send-keys -t $WKR3_PANE './bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: <description>"' Enter
 ```
+
+To find a pane later: `tmux list-panes -F '#{pane_id} #{@agent-id}' | awk '$2=="wkr-{name}" {print $1}'`
+
+To check for crashed workers: `tmux list-panes -F '#{pane_id} #{@agent-id} #{pane_dead}' | grep '1$'`
 
 Optionally, write the task into the worker's inbox before spawning:
 ```bash
