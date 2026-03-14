@@ -25,11 +25,10 @@ export MULTI_AGENT_HOME
 PROJECT_DIR="$(pwd)"
 
 SUPERMANAGER_PROMPT="$MULTI_AGENT_HOME/prompt/supermanager.md"
-ORGANIZATION="$MULTI_AGENT_HOME/prompt/organization.md"
 
 SESSION_NAME="supermanager"
 
-CMD="cd '$PROJECT_DIR' && export MULTI_AGENT_HOME='$MULTI_AGENT_HOME' && claude --dangerously-skip-permissions \"\$(cat '$SUPERMANAGER_PROMPT') \$(cat '$ORGANIZATION')\""
+CMD="cd '$PROJECT_DIR' && export MULTI_AGENT_HOME='$MULTI_AGENT_HOME' && claude --dangerously-skip-permissions \"\$(cat '$SUPERMANAGER_PROMPT')\""
 
 # Create a new tmux window (or session if not in tmux)
 if [ -n "$TMUX" ]; then
