@@ -26,35 +26,48 @@
 - Execute a task.
 - Report to their manager.
 
-# window 
-The organization has one tmux window.
-The super-manager and managers can control their allocated panes.
-When they want to spawn a new member, split the pane and give it to the new member.
-The layout must be 1 left pane + N stacked right panes (25% left, 75% right).
+# window
+The organization uses one tmux session. Each level gets its own tmux window.
 
-For example, when the super-manager splits 3 panes for their 3 managers:
+- **Window 0** — super-manager's window. The super-manager stays here.
+- **Window per manager** — when spawning a manager, create a new named window for it.
 
-**1 left + 3 right stacked:**
+Within a manager's window, the layout is 1 left pane (manager) + N stacked right panes (workers), 25%/75% split.
+
+## super-manager: spawning a manager
 ```bash
-tmux split-window -h -p 75
-tmux split-window -v -t 1 -p 66
-tmux split-window -v -t 2 -p 50
+# Create a named window for the manager and spawn it there
+tmux new-window -n mgr-backend
+# The manager is now in the new window's pane 0
+```
+
+## manager: spawning workers
+Split your window's pane to add workers (1 left + N right stacked):
+```bash
+tmux split-window -h -p 75           # worker 1 (right)
+tmux split-window -v -t 1 -p 66      # worker 2 (stacked below worker 1)
+tmux split-window -v -t 2 -p 50      # worker 3 (stacked below worker 2)
+```
+
+## navigating
+```bash
+tmux list-windows                     # see all manager windows
+tmux select-window -t mgr-backend    # jump to a manager's window
 ```
 
 # spawn
-The super-manager and managers can do:
-
-1. Split the pane.
-2. Spawn with the following commands.
-
 ## manager
-```
-./bin/spawn --claude -p "You're a manager. $(cat organization.md)"
+The super-manager creates a new tmux window, then spawns the manager there:
+```bash
+tmux new-window -n mgr-{role}
+./bin/spawn --claude -p "You're a manager named mgr-{role}. $(cat organization.md)"
 ```
 
 ## worker
-```
-./bin/spawn --codex -p "You're a worker. $(cat organization.md)"
+A manager splits its pane and spawns a worker:
+```bash
+# split pane (see window section for layout)
+./bin/spawn --codex -p "You're a worker named wkr-{role}. $(cat organization.md)"
 ```
 
 # communication
