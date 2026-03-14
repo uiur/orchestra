@@ -42,7 +42,7 @@ Use stable pane IDs (`#{pane_id}`, e.g. `%0`, `%1`) instead of numeric indices, 
 ```bash
 # Manager 1: split right from super-manager's pane
 MGR1_PANE=$(tmux split-window -h -t $SM_PANE -p 75 -P -F '#{pane_id}')
-tmux send-keys -t $MGR1_PANE './bin/spawn mgr-{role} --claude -p "$(cat manager.md)"' Enter
+tmux send-keys -t $MGR1_PANE './bin/spawn mgr-{role} --claude -p "$(cat prompt/manager.md)"' Enter
 
 # Manager 2: split right from manager 1
 MGR2_PANE=$(tmux split-window -h -t $MGR1_PANE -p 66 -P -F '#{pane_id}')
@@ -79,13 +79,13 @@ tmux select-pane -t %5    # jump to a specific pane by stable ID
 ## manager
 The super-manager splits a column for the manager in the current window (see window section) and spawns it:
 ```bash
-./bin/spawn mgr-{role} --claude -p "$(cat manager.md)"
+./bin/spawn mgr-{role} --claude -p "$(cat prompt/manager.md)"
 ```
 
 ## worker
 A manager splits its column vertically and spawns a worker:
 ```bash
-./bin/spawn wkr-{name} --codex -p "$(cat worker.md) Your task: ..."
+./bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: ..."
 ```
 
 # merging

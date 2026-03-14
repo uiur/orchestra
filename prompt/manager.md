@@ -44,17 +44,17 @@ MY_PANE=$(tmux display-message -p '#{pane_id}')
 # Worker 1: split below manager
 tmux split-window -v -t $MY_PANE -p 75
 WKR1_PANE=$(tmux display-message -p '#{pane_id}')
-tmux send-keys -t $WKR1_PANE './bin/spawn wkr-{name} --codex -p "$(cat worker.md) Your task: <description>"' Enter
+tmux send-keys -t $WKR1_PANE './bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: <description>"' Enter
 
 # Worker 2: split below worker 1
 tmux split-window -v -t $WKR1_PANE -p 66
 WKR2_PANE=$(tmux display-message -p '#{pane_id}')
-tmux send-keys -t $WKR2_PANE './bin/spawn wkr-{name} --codex -p "$(cat worker.md) Your task: <description>"' Enter
+tmux send-keys -t $WKR2_PANE './bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: <description>"' Enter
 
 # Worker 3: split below worker 2
 tmux split-window -v -t $WKR2_PANE -p 50
 WKR3_PANE=$(tmux display-message -p '#{pane_id}')
-tmux send-keys -t $WKR3_PANE './bin/spawn wkr-{name} --codex -p "$(cat worker.md) Your task: <description>"' Enter
+tmux send-keys -t $WKR3_PANE './bin/spawn wkr-{name} --codex -p "$(cat prompt/worker.md) Your task: <description>"' Enter
 ```
 
 Optionally, write the task into the worker's inbox before spawning:
