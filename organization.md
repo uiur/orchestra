@@ -28,30 +28,27 @@
 - Report to their manager.
 
 # window
-Everything runs in a single tmux window. The layout is **column-per-manager**: super-manager on the left, each manager gets a column to the right, workers stack vertically within their manager's column.
+Everything runs in a single tmux window. Managers run **sequentially** — one at a time — to give each manager and its workers enough terminal space. The super-manager occupies the left pane; the active manager gets a column to the right, with workers stacked below it.
 
 ```
-| SM  | Mgr1 | Mgr2 | Mgr3 |
-|     | Wkr1 | Wkr3 | Wkr5 |
-|     | Wkr2 | Wkr4 | Wkr6 |
+Phase 1:              Phase 2:              Phase 3:
+| SM  | Mgr1 |        | SM  | Mgr2 |        | SM  | Mgr3 |
+|     | Wkr1 |        |     | Wkr3 |        |     | Wkr5 |
+|     | Wkr2 |        |     | Wkr4 |        |     | Wkr6 |
 ```
 
 Use stable pane IDs (`#{pane_id}`, e.g. `%0`, `%1`) instead of numeric indices, because indices shift as panes are added.
 
 ## super-manager: spawning managers
+Spawn one manager at a time. Wait for it to finish (done message in inbox) before spawning the next.
 ```bash
-# Manager 1: split right from super-manager's pane
-tmux split-window -h -t $SM_PANE -p 75
-MGR1_PANE=$(tmux display-message -p '#{pane_id}')
-tmux send-keys -t $MGR1_PANE './bin/spawn mgr-{role} --claude -p "$(cat manager.md)"' Enter
+# Split right from super-manager's pane (50/50 split)
+tmux split-window -h -t $SM_PANE
+MGR_PANE=$(tmux display-message -p '#{pane_id}')
+tmux send-keys -t $MGR_PANE './bin/spawn mgr-{role} --claude -p "$(cat manager.md)"' Enter
 
-# Manager 2: split right from manager 1
-tmux split-window -h -t $MGR1_PANE -p 66
-MGR2_PANE=$(tmux display-message -p '#{pane_id}')
-
-# Manager 3: split right from manager 2
-tmux split-window -h -t $MGR2_PANE -p 50
-MGR3_PANE=$(tmux display-message -p '#{pane_id}')
+# Wait for done message, then kill the manager column before spawning the next
+# tmux kill-pane -t $MGR_PANE
 ```
 
 ## manager: spawning workers
