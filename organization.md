@@ -10,7 +10,7 @@
 - Can have up to 3 managers.
 - Name each manager after its role.
 - Report the progress to the human.
-- The super-manager has the whole window first and splits the window for their managers.
+- The super-manager owns the leftmost pane and splits columns to the right for managers.
 - The super-manager can spawn a manager with a command (see below).
 
 ## managers
@@ -19,7 +19,7 @@
 - Must NOT execute any task for themselves. Always delegate to workers.
 - Can have up to 3 workers.
 - Name each worker after its role (e.g., frontend, backend, infra).
-- A manager has one pane and splits the pane for their workers.
+- A manager owns the top of its column and splits vertically for workers below.
 - A manager can spawn a worker with a command.
 - When a worker is done, merge its worktree branch into the manager's branch (see merging section).
 
@@ -28,49 +28,70 @@
 - Report to their manager.
 
 # window
-The organization uses one tmux session. Each level gets its own tmux window.
+Everything runs in a single tmux window. The layout is **column-per-manager**: super-manager on the left, each manager gets a column to the right, workers stack vertically within their manager's column.
 
-- **Window 0** — super-manager's window. The super-manager stays here.
-- **Window per manager** — when spawning a manager, create a new named window for it.
+```
+| SM  | Mgr1 | Mgr2 | Mgr3 |
+|     | Wkr1 | Wkr3 | Wkr5 |
+|     | Wkr2 | Wkr4 | Wkr6 |
+```
 
-Within a manager's window, the layout is 1 left pane (manager) + N stacked right panes (workers), 25%/75% split.
+Use stable pane IDs (`#{pane_id}`, e.g. `%0`, `%1`) instead of numeric indices, because indices shift as panes are added.
 
-## super-manager: spawning a manager
+## super-manager: spawning managers
 ```bash
-# Create a named window for the manager and spawn it there
-tmux new-window -n mgr-backend
-# The manager is now in the new window's pane 0
+# Manager 1: split right from super-manager's pane
+tmux split-window -h -t $SM_PANE -p 75
+MGR1_PANE=$(tmux display-message -p '#{pane_id}')
+tmux send-keys -t $MGR1_PANE './bin/spawn mgr-{role} --claude -p "$(cat manager.md)"' Enter
+
+# Manager 2: split right from manager 1
+tmux split-window -h -t $MGR1_PANE -p 66
+MGR2_PANE=$(tmux display-message -p '#{pane_id}')
+
+# Manager 3: split right from manager 2
+tmux split-window -h -t $MGR2_PANE -p 50
+MGR3_PANE=$(tmux display-message -p '#{pane_id}')
 ```
 
 ## manager: spawning workers
-Split your window's pane to add workers (1 left + N right stacked):
+A manager splits its own pane vertically to stack workers below it:
 ```bash
-tmux split-window -h -p 75           # worker 1 (right)
-tmux split-window -v -t 1 -p 66      # worker 2 (stacked below worker 1)
-tmux split-window -v -t 2 -p 50      # worker 3 (stacked below worker 2)
+MY_PANE=$(tmux display-message -p '#{pane_id}')
+
+# Worker 1: split below
+tmux split-window -v -t $MY_PANE -p 75
+WKR1_PANE=$(tmux display-message -p '#{pane_id}')
+tmux send-keys -t $WKR1_PANE './bin/spawn wkr-{name} --codex -p "..."' Enter
+
+# Worker 2: split below worker 1
+tmux split-window -v -t $WKR1_PANE -p 66
+WKR2_PANE=$(tmux display-message -p '#{pane_id}')
+
+# Worker 3: split below worker 2
+tmux split-window -v -t $WKR2_PANE -p 50
+WKR3_PANE=$(tmux display-message -p '#{pane_id}')
 ```
 
 ## navigating
 ```bash
-tmux list-windows                     # see all manager windows
-tmux select-window -t mgr-backend    # jump to a manager's window
+tmux list-panes -F '#{pane_id} #{pane_current_command} #{pane_title}'
+tmux select-pane -t %5    # jump to a specific pane by stable ID
 ```
 
 # spawn
 `./bin/spawn` creates a git worktree (isolated branch copy of the repo), launches an AI assistant inside it, and cleans up the worktree on exit. Each spawned agent works in its own worktree, so agents never conflict on file changes.
 
 ## manager
-The super-manager creates a new tmux window, then spawns the manager there:
+The super-manager splits a column for the manager in the current window (see window section) and spawns it:
 ```bash
-tmux new-window -n mgr-{role}
-./bin/spawn --claude -p "You're a manager named mgr-{role}. $(cat organization.md)"
+./bin/spawn mgr-{role} --claude -p "$(cat manager.md)"
 ```
 
 ## worker
-A manager splits its pane and spawns a worker:
+A manager splits its column vertically and spawns a worker:
 ```bash
-# split pane (see window section for layout)
-./bin/spawn --codex -p "You're a worker named wkr-{role}. $(cat organization.md)"
+./bin/spawn wkr-{name} --codex -p "$(cat worker.md) Your task: ..."
 ```
 
 # merging

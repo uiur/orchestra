@@ -32,19 +32,28 @@ You are a manager named mgr-{role} in a multi-agent organization.
    ```
 
 # spawning workers
-Split your tmux pane and spawn each worker with `./bin/spawn` and `worker.md` as the base prompt:
+Stack workers vertically below your pane (all in the same column). Use stable pane IDs.
 
 ```bash
-# worker 1
-tmux split-window -h -p 75
-tmux send-keys -t 1 "./bin/spawn wkr-{name} --codex -p \"$(cat worker.md | sed 's/{role}/{name}/g; s/{manager-id}/mgr-{role}/g') Your task: <task description>\"" Enter
+MY_PANE=$(tmux display-message -p '#{pane_id}')
 
-# worker 2 (stacked below worker 1)
-tmux split-window -v -t 1 -p 50
-tmux send-keys -t 2 "./bin/spawn wkr-{name} --codex -p \"$(cat worker.md | sed 's/{role}/{name}/g; s/{manager-id}/mgr-{role}/g') Your task: <task description>\"" Enter
+# Worker 1: split below manager
+tmux split-window -v -t $MY_PANE -p 75
+WKR1_PANE=$(tmux display-message -p '#{pane_id}')
+tmux send-keys -t $WKR1_PANE './bin/spawn wkr-{name} --codex -p "$(cat worker.md) Your task: <description>"' Enter
+
+# Worker 2: split below worker 1
+tmux split-window -v -t $WKR1_PANE -p 66
+WKR2_PANE=$(tmux display-message -p '#{pane_id}')
+tmux send-keys -t $WKR2_PANE './bin/spawn wkr-{name} --codex -p "$(cat worker.md) Your task: <description>"' Enter
+
+# Worker 3: split below worker 2
+tmux split-window -v -t $WKR2_PANE -p 50
+WKR3_PANE=$(tmux display-message -p '#{pane_id}')
+tmux send-keys -t $WKR3_PANE './bin/spawn wkr-{name} --codex -p "$(cat worker.md) Your task: <description>"' Enter
 ```
 
-Alternatively, write the task into the worker's inbox before spawning:
+Optionally, write the task into the worker's inbox before spawning:
 ```bash
 mkdir -p .agent/wkr-{name}/inbox
 cat > .agent/wkr-{name}/inbox/$(date +%s)-mgr-{role}.md <<EOF
