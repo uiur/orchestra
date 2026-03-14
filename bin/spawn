@@ -5,7 +5,7 @@ set -e
 
 usage() {
   cat <<'USAGE'
-Usage: worktree_agent [branch] [--assistant claude|codex] [--codex|--claude] [-p|--prompt PROMPT]
+Usage: worktree_agent [branch] [--assistant claude|codex] [--codex|--claude] [-p|--prompt PROMPT] [-f|--prompt-file FILE]
 
 If branch is omitted, a random name is generated.
 Assistant selection:
@@ -13,6 +13,7 @@ Assistant selection:
   - override: use --assistant/-a/--tool, --codex/--claude, or set ASSISTANT env var
 Prompt:
   - pass -p/--prompt to forward a prompt to the assistant
+  - pass -f/--prompt-file to read prompt from a file (avoids shell expansion issues)
 USAGE
 }
 
@@ -50,6 +51,19 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       PROMPT="$2"
+      shift 2
+      ;;
+    -f|--prompt-file)
+      if [ -z "${2:-}" ]; then
+        echo "Missing prompt file path."
+        usage
+        exit 1
+      fi
+      if [ ! -f "$2" ]; then
+        echo "Prompt file not found: $2"
+        exit 1
+      fi
+      PROMPT="$(cat "$2")"
       shift 2
       ;;
     *)
