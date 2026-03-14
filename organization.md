@@ -54,7 +54,7 @@ MGR3_PANE=$(tmux split-window -h -t $MGR2_PANE -p 50 -P -F '#{pane_id}')
 ## manager: spawning workers
 A manager splits its own pane vertically to stack workers below it:
 ```bash
-MY_PANE=$(tmux display-message -p -t '{self}' '#{pane_id}')
+MY_PANE=$TMUX_PANE  # set automatically by tmux in each pane's environment
 
 # Worker 1: split below
 WKR1_PANE=$(tmux split-window -v -t $MY_PANE -p 75 -P -F '#{pane_id}')
