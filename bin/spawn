@@ -105,37 +105,17 @@ esac
 
 # Get the main repo root
 MAIN_REPO=$(git rev-parse --show-toplevel)
-REPO_DIR_NAME=$(basename "$MAIN_REPO")
-WORKTREE_BASE="../.worktree"
+WORKTREE_BASE="${MAIN_REPO}/.agent/worktrees"
 mkdir -p "$WORKTREE_BASE"
-WORKTREE_PATH="${WORKTREE_BASE}/${REPO_DIR_NAME}-${BRANCH_NAME}"
-
-cleanup() {
-  if [ -n "${WORKTREE_ABS_PATH:-}" ] && [ -d "$WORKTREE_ABS_PATH" ]; then
-    cd "$MAIN_REPO"
-    git pull --ff-only || {
-      echo "git pull --ff-only failed; skipping."
-    }
-    git submodule update || {
-      echo "git submodule update failed; skipping."
-    }
-    git worktree remove "$WORKTREE_ABS_PATH" --force || true
-    echo "Worktree cleaned up: $WORKTREE_ABS_PATH"
-  fi
-}
-trap cleanup EXIT
+WORKTREE_PATH="${WORKTREE_BASE}/${BRANCH_NAME}"
 
 # Create worktree
 git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" 2>/dev/null || \
 git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"
 
-# Copy .env files
-cp "$MAIN_REPO/server/.env" "$WORKTREE_PATH/server/.env" 2>/dev/null || true
-cp "$MAIN_REPO/server/.env.test" "$WORKTREE_PATH/server/.env.test" 2>/dev/null || true
-cp "$MAIN_REPO/demo/.env" "$WORKTREE_PATH/demo/.env" 2>/dev/null || true
-cp "$MAIN_REPO/e_scott_sample/.env" "$WORKTREE_PATH/e_scott_sample/.env" 2>/dev/null || true
+# Symlink .agent so the worktree can access the shared inbox system
+ln -sfn "${MAIN_REPO}/.agent" "${WORKTREE_PATH}/.agent"
 
 # Change to worktree and launch assistant
 cd "$WORKTREE_PATH"
-WORKTREE_ABS_PATH=$(pwd)
 "${LAUNCH_CMD[@]}"

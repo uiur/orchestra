@@ -56,6 +56,8 @@ tmux select-window -t mgr-backend    # jump to a manager's window
 ```
 
 # spawn
+`./bin/spawn` creates a git worktree (isolated branch copy of the repo), launches an AI assistant inside it, and cleans up the worktree on exit. Each spawned agent works in its own worktree, so agents never conflict on file changes.
+
 ## manager
 The super-manager creates a new tmux window, then spawns the manager there:
 ```bash
