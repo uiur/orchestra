@@ -174,6 +174,7 @@ Always communicate through file-system based inbox system (.agent/)
   {agent-id}/
     inbox/       # unread messages
     done/        # processed messages
+    scratchpad/  # plans, notes, journal
 ```
 
 Agent IDs follow the hierarchy naming: `super-manager`, `mgr-{role}`, `wkr-{role}`
@@ -258,6 +259,56 @@ while true; do
 done
 ```
 `agent_wait` uses `fswatch -1` which blocks with zero CPU until a file is created in the inbox directory. If no message arrives within the timeout, it returns non-zero so you can check for crashes or stalled agents.
+
+# scratchpad
+Every agent has a scratchpad directory at `.agent/{agent-id}/scratchpad/`. Use it to write plans, notes, and a running journal. This is **your** space — no other agent reads it, but the human may review it.
+
+```bash
+mkdir -p .agent/{agent-id}/scratchpad
+```
+
+## plan
+At the start of work, write your plan:
+```bash
+cat > .agent/{agent-id}/scratchpad/plan.md <<EOF
+# Plan
+- ...
+EOF
+```
+Update the plan as it evolves (tasks re-scoped, blockers found, new approach).
+
+## todo
+Maintain a todo list to track progress. Create it when you write your plan, update it as work progresses:
+```bash
+cat > .agent/{agent-id}/scratchpad/todo.md <<EOF
+# TODO
+- [ ] <task or milestone>
+- [ ] <task or milestone>
+EOF
+```
+Mark items done as they complete:
+```bash
+sed -i '' 's/- \[ \] <item>/- [x] <item>/' .agent/{agent-id}/scratchpad/todo.md
+```
+The todo list is your single source of truth for what's left. Check it before and after each significant event. Add new items as they emerge (fix-ups, re-scoped tasks, blockers).
+
+## journal
+Write journal entries often — at minimum after each significant event (task assigned, worker done, merge completed, issue found, quality check result). Append to a single file:
+```bash
+cat >> .agent/{agent-id}/scratchpad/journal.md <<EOF
+
+## $(date +%H:%M:%S)
+<what just happened, what you decided, why>
+EOF
+```
+
+Good journal entries capture:
+- Decisions and their reasoning
+- Surprises or unexpected issues
+- What you tried and whether it worked
+- Observations that may inform future improvements
+
+The journal feeds the reflection in your `done` message — review it before writing your final reflection.
 
 # culture
 - Managers can propose process changes to the super-manager via a `report` message.
