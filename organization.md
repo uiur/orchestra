@@ -41,36 +41,30 @@ Use stable pane IDs (`#{pane_id}`, e.g. `%0`, `%1`) instead of numeric indices, 
 ## super-manager: spawning managers
 ```bash
 # Manager 1: split right from super-manager's pane
-tmux split-window -h -t $SM_PANE -p 75
-MGR1_PANE=$(tmux display-message -p '#{pane_id}')
+MGR1_PANE=$(tmux split-window -h -t $SM_PANE -p 75 -P -F '#{pane_id}')
 tmux send-keys -t $MGR1_PANE './bin/spawn mgr-{role} --claude -p "$(cat manager.md)"' Enter
 
 # Manager 2: split right from manager 1
-tmux split-window -h -t $MGR1_PANE -p 66
-MGR2_PANE=$(tmux display-message -p '#{pane_id}')
+MGR2_PANE=$(tmux split-window -h -t $MGR1_PANE -p 66 -P -F '#{pane_id}')
 
 # Manager 3: split right from manager 2
-tmux split-window -h -t $MGR2_PANE -p 50
-MGR3_PANE=$(tmux display-message -p '#{pane_id}')
+MGR3_PANE=$(tmux split-window -h -t $MGR2_PANE -p 50 -P -F '#{pane_id}')
 ```
 
 ## manager: spawning workers
 A manager splits its own pane vertically to stack workers below it:
 ```bash
-MY_PANE=$(tmux display-message -p '#{pane_id}')
+MY_PANE=$(tmux display-message -p -t '{self}' '#{pane_id}')
 
 # Worker 1: split below
-tmux split-window -v -t $MY_PANE -p 75
-WKR1_PANE=$(tmux display-message -p '#{pane_id}')
+WKR1_PANE=$(tmux split-window -v -t $MY_PANE -p 75 -P -F '#{pane_id}')
 tmux send-keys -t $WKR1_PANE './bin/spawn wkr-{name} --codex -p "..."' Enter
 
 # Worker 2: split below worker 1
-tmux split-window -v -t $WKR1_PANE -p 66
-WKR2_PANE=$(tmux display-message -p '#{pane_id}')
+WKR2_PANE=$(tmux split-window -v -t $WKR1_PANE -p 66 -P -F '#{pane_id}')
 
 # Worker 3: split below worker 2
-tmux split-window -v -t $WKR2_PANE -p 50
-WKR3_PANE=$(tmux display-message -p '#{pane_id}')
+WKR3_PANE=$(tmux split-window -v -t $WKR2_PANE -p 50 -P -F '#{pane_id}')
 ```
 
 ## navigating
