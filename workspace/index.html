@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Four</title>
+    <style>
+/* ===== styles.css ===== */
+:root {
+  color-scheme: dark;
+  --bg: #0d1117;
+  --bg-accent: #161b22;
+  --panel: rgba(22, 27, 34, 0.78);
+  --panel-strong: rgba(30, 41, 59, 0.92);
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --red: #f87171;
+  --yellow: #facc15;
+  --line: rgba(148, 163, 184, 0.18);
+  --shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 999px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top, rgba(250, 204, 21, 0.12), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(248, 113, 113, 0.14), transparent 35%),
+    var(--bg);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at center, black 40%, transparent 90%);
+}
+
+.app-shell {
+  width: min(100%, 600px);
+  margin: 0 auto;
+  padding: 28px 18px 36px;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 7vw, 3.4rem);
+  line-height: 0.95;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow);
+}
+
+.control-group {
+  min-width: 0;
+}
+
+.mode-group {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mode-group input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-group label {
+  cursor: pointer;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  color: var(--muted);
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.mode-group input:checked + label {
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.2), rgba(250, 204, 21, 0.18));
+  transform: translateY(-1px);
+}
+
+.control-group--difficulty {
+  flex: 1 1 220px;
+  display: grid;
+  gap: 8px;
+  min-width: 220px;
+  transition: opacity 220ms ease, max-height 220ms ease, transform 220ms ease, margin 220ms ease;
+  max-height: 200px;
+  opacity: 1;
+}
+
+.control-group--difficulty.is-hidden {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+
+.difficulty-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.difficulty-label output {
+  color: var(--text);
+  font-weight: 700;
+}
+
+#difficulty {
+  width: 100%;
+  accent-color: var(--yellow);
+}
+
+.difficulty-scale {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.difficulty-scale span:nth-child(3),
+.difficulty-scale span:nth-child(4),
+.difficulty-scale span:nth-child(5) {
+  text-align: center;
+}
+
+.difficulty-scale span:last-child {
+  text-align: right;
+}
+
+.new-game-button {
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 700;
+  color: #0f172a;
+  background: linear-gradient(135deg, #facc15, #fb7185);
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(248, 113, 113, 0.25);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.new-game-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+  box-shadow: 0 18px 36px rgba(248, 113, 113, 0.3);
+}
+
+.new-game-button:active {
+  transform: translateY(0);
+}
+
+.sound-toggle {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.sound-toggle:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+}
+
+.sound-toggle.is-on {
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.15), rgba(250, 204, 21, 0.12));
+}
+
+.status {
+  margin: 18px 0 16px;
+  text-align: center;
+  font-size: clamp(1.05rem, 4vw, 1.35rem);
+  font-weight: 700;
+  color: var(--text);
+  min-height: 1.5em;
+  transition: color 180ms ease;
+}
+
+.status[data-player="1"] {
+  color: var(--red);
+}
+
+.status[data-player="2"] {
+  color: var(--yellow);
+}
+
+.board-shell {
+  min-height: 320px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius-lg) + 4px);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.92));
+  box-shadow: var(--shadow);
+}
+
+.scoreboard {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.score-card {
+  padding: 14px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  text-align: center;
+}
+
+.score-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.score-card strong {
+  font-size: 1.6rem;
+}
+
+.score-card--red strong {
+  color: var(--red);
+}
+
+.score-card--yellow strong {
+  color: var(--yellow);
+}
+
+@media (max-width: 520px) {
+  .app-shell {
+    padding-inline: 12px;
+  }
+
+  .controls {
+    align-items: stretch;
+  }
+
+  .mode-group,
+  .new-game-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mode-group label {
+    flex: 1 1 0;
+    text-align: center;
+  }
+
+  .scoreboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== board.css ===== */
+.connect-four-board {
+  --board-blue: #1a237e;
+  --board-blue-light: #283593;
+  --slot-dark: #0b103f;
+  --piece-inset: 10%;
+  --board-gap: clamp(0.3rem, 1vw, 0.55rem);
+  width: min(100%, 42rem);
+  margin-inline: auto;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.board-frame {
+  position: relative;
+  display: grid;
+  gap: var(--board-gap);
+}
+
+.preview-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--board-gap);
+  padding-inline: var(--board-gap);
+}
+
+.preview-cell,
+.cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+}
+
+.board-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  gap: var(--board-gap);
+  padding: var(--board-gap);
+  aspect-ratio: 7 / 6;
+  background: linear-gradient(180deg, var(--board-blue-light) 0%, var(--board-blue) 100%);
+  border-radius: 1.5rem;
+  box-shadow:
+    0 1rem 2rem rgba(7, 10, 35, 0.28),
+    inset 0 0.15rem 0 rgba(255, 255, 255, 0.16);
+}
+
+.cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, #151c63 0%, var(--slot-dark) 74%, #050821 100%);
+  box-shadow:
+    inset 0 0.25rem 0.55rem rgba(255, 255, 255, 0.08),
+    inset 0 -0.35rem 0.7rem rgba(0, 0, 0, 0.4);
+}
+
+.piece {
+  position: absolute;
+  inset: var(--piece-inset);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.4);
+  pointer-events: none;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    filter 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.cell .piece,
+.drop-piece {
+  box-shadow:
+    inset 0 0.18rem 0.28rem rgba(255, 255, 255, 0.35),
+    inset 0 -0.32rem 0.5rem rgba(0, 0, 0, 0.24),
+    0 0.3rem 0.55rem rgba(0, 0, 0, 0.22);
+}
+
+.piece.player1,
+.piece.player2 {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.piece.player1 {
+  background: radial-gradient(circle at 35% 30%, #ff8a80 0%, #f44336 62%, #d32f2f 100%);
+}
+
+.piece.player2 {
+  background: radial-gradient(circle at 35% 30%, #fff59d 0%, #ffeb3b 62%, #fbc02d 100%);
+}
+
+.piece.preview {
+  opacity: 0.4;
+  transform: scale(0.88);
+  filter: saturate(0.88);
+}
+
+.cell.winning .piece:not(.preview) {
+  animation: winningPulse 950ms ease-in-out infinite;
+}
+
+.drop-piece {
+  position: absolute;
+  z-index: 5;
+  margin: 0;
+  animation: dropPiece var(--drop-duration, 420ms) cubic-bezier(0.2, 0.85, 0.25, 1) forwards;
+}
+
+.is-hidden-for-animation {
+  opacity: 0 !important;
+  transform: scale(0.25) !important;
+}
+
+.connect-four-board.is-interactive .preview-cell,
+.connect-four-board.is-interactive .cell {
+  cursor: pointer;
+}
+
+@keyframes dropPiece {
+  from {
+    transform: translateY(0) scale(0.96);
+  }
+
+  72% {
+    transform: translateY(calc(var(--drop-distance) + 0.35rem)) scale(1.02);
+  }
+
+  to {
+    transform: translateY(var(--drop-distance)) scale(1);
+  }
+}
+
+@keyframes winningPulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0.18rem 0.28rem rgba(255, 255, 255, 0.35),
+      inset 0 -0.32rem 0.5rem rgba(0, 0, 0, 0.24),
+      0 0 0.1rem rgba(255, 255, 255, 0.25),
+      0 0 0.5rem rgba(255, 255, 255, 0.35);
+  }
+
+  50% {
+    box-shadow:
+      inset 0 0.18rem 0.28rem rgba(255, 255, 255, 0.45),
+      inset 0 -0.32rem 0.5rem rgba(0, 0, 0, 0.18),
+      0 0 0.25rem rgba(255, 255, 255, 0.45),
+      0 0 1rem rgba(255, 255, 255, 0.65);
+  }
+}
+
+@media (max-width: 480px) {
+  .connect-four-board {
+    width: min(100%, 30rem);
+  }
+
+  .board-grid {
+    border-radius: 1.1rem;
+  }
+}
+    </style>
+  </head>
+  <body>
+    <main id="app" class="app-shell">
+      <header class="app-header">
+        <p class="eyebrow">Arcade Match</p>
+        <h1>Connect Four</h1>
+      </header>
+
+      <section id="controls" class="controls" aria-label="Game controls">
+        <div class="control-group mode-group" role="radiogroup" aria-label="Game mode">
+          <input type="radio" id="mode-pvp" name="mode" value="pvp" checked>
+          <label for="mode-pvp">PvP</label>
+
+          <input type="radio" id="mode-pvai" name="mode" value="pvai">
+          <label for="mode-pvai">PvAI</label>
+        </div>
+
+        <div id="difficulty-group" class="control-group control-group--difficulty is-hidden">
+          <label class="difficulty-label" for="difficulty">
+            <span>AI Difficulty</span>
+            <output id="difficulty-output" for="difficulty">3 &middot; Hard</output>
+          </label>
+          <input id="difficulty" type="range" min="1" max="5" step="1" value="3">
+          <div class="difficulty-scale" aria-hidden="true">
+            <span>Easy</span>
+            <span>Medium</span>
+            <span>Hard</span>
+            <span>Expert</span>
+            <span>Master</span>
+          </div>
+        </div>
+
+        <button id="sound-toggle" class="sound-toggle is-on" type="button">Sound: On</button>
+        <button id="new-game" class="new-game-button" type="button">New Game</button>
+      </section>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div id="board-container" class="board-shell"></div>
+
+      <section id="score" class="scoreboard" aria-label="Scoreboard">
+        <article class="score-card score-card--red">
+          <span class="score-label">Red</span>
+          <strong id="score-p1">0</strong>
+        </article>
+        <article class="score-card score-card--draws">
+          <span class="score-label">Draws</span>
+          <strong id="score-draws">0</strong>
+        </article>
+        <article class="score-card score-card--yellow">
+          <span class="score-label">Yellow</span>
+          <strong id="score-p2">0</strong>
+        </article>
+      </section>
+    </main>
+
+    <script>
+/* ===== Game Engine (class-based) ===== */
+(function() {
+  var ROWS = 6;
+  var COLS = 7;
+
+  function GameEngine() {
+    this.reset();
+  }
+
+  GameEngine.prototype.reset = function() {
+    this._board = [];
+    for (var row = 0; row < ROWS; row += 1) {
+      var cells = [];
+      for (var col = 0; col < COLS; col += 1) {
+        cells.push(0);
+      }
+      this._board.push(cells);
+    }
+    this._currentPlayer = 1;
+    this._gameOver = false;
+    this._winner = null;
+    this._winCells = [];
+  };
+
+  GameEngine.prototype.makeMove = function(col) {
+    if (!this.isValidMove(col)) {
+      return null;
+    }
+
+    for (var row = ROWS - 1; row >= 0; row -= 1) {
+      if (this._board[row][col] === 0) {
+        var player = this._currentPlayer;
+        this._board[row][col] = player;
+        this._currentPlayer = player === 1 ? 2 : 1;
+        return { row: row, col: col, player: player };
+      }
+    }
+
+    return null;
+  };
+
+  GameEngine.prototype.isValidMove = function(col) {
+    return Number.isInteger(col) && col >= 0 && col < COLS && this._board[0][col] === 0;
+  };
+
+  GameEngine.prototype.checkWin = function() {
+    var result = this._checkDirection(0, 1);
+    if (result) return result;
+
+    result = this._checkDirection(1, 0);
+    if (result) return result;
+
+    result = this._checkDirection(1, 1);
+    if (result) return result;
+
+    return this._checkDirection(1, -1);
+  };
+
+  GameEngine.prototype.isDraw = function() {
+    return this.checkWin() === null && this.getValidMoves().length === 0;
+  };
+
+  GameEngine.prototype.getValidMoves = function() {
+    var moves = [];
+    for (var col = 0; col < COLS; col += 1) {
+      if (this.isValidMove(col)) {
+        moves.push(col);
+      }
+    }
+    return moves;
+  };
+
+  GameEngine.prototype.getCurrentPlayer = function() {
+    return this._currentPlayer;
+  };
+
+  GameEngine.prototype.getBoard = function() {
+    return this._board;
+  };
+
+  GameEngine.prototype.cloneBoard = function() {
+    return this._board.map(function(row) { return row.slice(); });
+  };
+
+  GameEngine.prototype._checkDirection = function(rowStep, colStep) {
+    for (var row = 0; row < ROWS; row += 1) {
+      for (var col = 0; col < COLS; col += 1) {
+        var endRow = row + rowStep * 3;
+        var endCol = col + colStep * 3;
+
+        if (endRow < 0 || endRow >= ROWS || endCol < 0 || endCol >= COLS) {
+          continue;
+        }
+
+        var player = this._board[row][col];
+        if (player === 0) {
+          continue;
+        }
+
+        var cells = [];
+        var matched = true;
+
+        for (var offset = 0; offset < 4; offset += 1) {
+          var nextRow = row + rowStep * offset;
+          var nextCol = col + colStep * offset;
+
+          if (this._board[nextRow][nextCol] !== player) {
+            matched = false;
+            break;
+          }
+
+          cells.push([nextRow, nextCol]);
+        }
+
+        if (matched) {
+          return { player: player, cells: cells };
+        }
+      }
+    }
+
+    return null;
+  };
+
+  window.GameEngine = GameEngine;
+})();
+
+/* ===== AI Module (minimax with alpha-beta pruning) ===== */
+(function() {
+  var ROWS = 6;
+  var COLS = 7;
+  var COLUMN_ORDER = [3, 2, 4, 1, 5, 0, 6];
+  var DEPTH_BY_DIFFICULTY = {
+    2: 2,
+    3: 4,
+    4: 6,
+    5: 8
+  };
+
+  function getValidColumns(board) {
+    var validColumns = [];
+    for (var col = 0; col < COLS; col += 1) {
+      if (board[0][col] === 0) {
+        validColumns.push(col);
+      }
+    }
+    return validColumns;
+  }
+
+  function findLowestRow(board, col) {
+    for (var row = ROWS - 1; row >= 0; row -= 1) {
+      if (board[row][col] === 0) {
+        return row;
+      }
+    }
+    return -1;
+  }
+
+  function checkWinState(board) {
+    var row, col, player;
+
+    for (row = 0; row < ROWS; row += 1) {
+      for (col = 0; col < COLS - 3; col += 1) {
+        player = board[row][col];
+        if (
+          player !== 0 &&
+          player === board[row][col + 1] &&
+          player === board[row][col + 2] &&
+          player === board[row][col + 3]
+        ) {
+          return player;
+        }
+      }
+    }
+
+    for (row = 0; row < ROWS - 3; row += 1) {
+      for (col = 0; col < COLS; col += 1) {
+        player = board[row][col];
+        if (
+          player !== 0 &&
+          player === board[row + 1][col] &&
+          player === board[row + 2][col] &&
+          player === board[row + 3][col]
+        ) {
+          return player;
+        }
+      }
+    }
+
+    for (row = 0; row < ROWS - 3; row += 1) {
+      for (col = 0; col < COLS - 3; col += 1) {
+        player = board[row][col];
+        if (
+          player !== 0 &&
+          player === board[row + 1][col + 1] &&
+          player === board[row + 2][col + 2] &&
+          player === board[row + 3][col + 3]
+        ) {
+          return player;
+        }
+      }
+    }
+
+    for (row = 3; row < ROWS; row += 1) {
+      for (col = 0; col < COLS - 3; col += 1) {
+        player = board[row][col];
+        if (
+          player !== 0 &&
+          player === board[row - 1][col + 1] &&
+          player === board[row - 2][col + 2] &&
+          player === board[row - 3][col + 3]
+        ) {
+          return player;
+        }
+      }
+    }
+
+    return 0;
+  }
+
+  function isBoardFull(board) {
+    for (var col = 0; col < COLS; col += 1) {
+      if (board[0][col] === 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function scoreWindow(window, player) {
+    var opponent = 3 - player;
+    var playerCount = 0;
+    var opponentCount = 0;
+    var emptyCount = 0;
+
+    for (var i = 0; i < 4; i += 1) {
+      if (window[i] === player) {
+        playerCount += 1;
+      } else if (window[i] === opponent) {
+        opponentCount += 1;
+      } else {
+        emptyCount += 1;
+      }
+    }
+
+    if (playerCount === 4) return 100000;
+    if (opponentCount === 4) return -100000;
+    if (playerCount === 3 && emptyCount === 1) return 100;
+    if (playerCount === 2 && emptyCount === 2) return 10;
+    if (opponentCount === 3 && emptyCount === 1) return -80;
+    return 0;
+  }
+
+  function evaluateBoard(board, player) {
+    var score = 0;
+    var row, col;
+
+    for (row = 0; row < ROWS; row += 1) {
+      if (board[row][3] === player) {
+        score += 6;
+      }
+    }
+
+    for (row = 0; row < ROWS; row += 1) {
+      for (col = 0; col < COLS - 3; col += 1) {
+        score += scoreWindow(
+          [board[row][col], board[row][col + 1], board[row][col + 2], board[row][col + 3]],
+          player
+        );
+      }
+    }
+
+    for (row = 0; row < ROWS - 3; row += 1) {
+      for (col = 0; col < COLS; col += 1) {
+        score += scoreWindow(
+          [board[row][col], board[row + 1][col], board[row + 2][col], board[row + 3][col]],
+          player
+        );
+      }
+    }
+
+    for (row = 0; row < ROWS - 3; row += 1) {
+      for (col = 0; col < COLS - 3; col += 1) {
+        score += scoreWindow(
+          [board[row][col], board[row + 1][col + 1], board[row + 2][col + 2], board[row + 3][col + 3]],
+          player
+        );
+      }
+    }
+
+    for (row = 3; row < ROWS; row += 1) {
+      for (col = 0; col < COLS - 3; col += 1) {
+        score += scoreWindow(
+          [board[row][col], board[row - 1][col + 1], board[row - 2][col + 2], board[row - 3][col + 3]],
+          player
+        );
+      }
+    }
+
+    return score;
+  }
+
+  function minimax(board, depth, alpha, beta, isMaximizing, aiPlayer) {
+    var winner = checkWinState(board);
+    var opponent = 3 - aiPlayer;
+
+    if (winner === aiPlayer) return 1000000 + depth;
+    if (winner === opponent) return -1000000 - depth;
+    if (isBoardFull(board)) return 0;
+    if (depth === 0) return evaluateBoard(board, aiPlayer);
+
+    var i, col, row, score;
+
+    if (isMaximizing) {
+      var bestScore = -Infinity;
+
+      for (i = 0; i < COLUMN_ORDER.length; i += 1) {
+        col = COLUMN_ORDER[i];
+        row = findLowestRow(board, col);
+        if (row === -1) continue;
+
+        board[row][col] = aiPlayer;
+        score = minimax(board, depth - 1, alpha, beta, false, aiPlayer);
+        board[row][col] = 0;
+
+        if (score > bestScore) bestScore = score;
+        if (score > alpha) alpha = score;
+        if (alpha >= beta) break;
+      }
+
+      return bestScore;
+    }
+
+    var bestScoreMin = Infinity;
+
+    for (i = 0; i < COLUMN_ORDER.length; i += 1) {
+      col = COLUMN_ORDER[i];
+      row = findLowestRow(board, col);
+      if (row === -1) continue;
+
+      board[row][col] = opponent;
+      score = minimax(board, depth - 1, alpha, beta, true, aiPlayer);
+      board[row][col] = 0;
+
+      if (score < bestScoreMin) bestScoreMin = score;
+      if (score < beta) beta = score;
+      if (alpha >= beta) break;
+    }
+
+    return bestScoreMin;
+  }
+
+  function getOrderedValidColumns(board) {
+    var validColumns = getValidColumns(board);
+    if (validColumns.length <= 1) return validColumns;
+
+    var isValid = {};
+    for (var i = 0; i < validColumns.length; i += 1) {
+      isValid[validColumns[i]] = true;
+    }
+
+    var orderedColumns = [];
+    for (var j = 0; j < COLUMN_ORDER.length; j += 1) {
+      var c = COLUMN_ORDER[j];
+      if (isValid[c]) orderedColumns.push(c);
+    }
+
+    return orderedColumns;
+  }
+
+  function getCurrentPlayer(board) {
+    var p1 = 0, p2 = 0;
+    for (var row = 0; row < ROWS; row += 1) {
+      for (var col = 0; col < COLS; col += 1) {
+        if (board[row][col] === 1) p1 += 1;
+        else if (board[row][col] === 2) p2 += 1;
+      }
+    }
+    return p1 === p2 ? 1 : 2;
+  }
+
+  function getAIMove(board, difficulty) {
+    var validColumns = getOrderedValidColumns(board);
+    if (validColumns.length === 0) return -1;
+
+    if (difficulty === 1) {
+      return validColumns[Math.floor(Math.random() * validColumns.length)];
+    }
+
+    var depth = DEPTH_BY_DIFFICULTY[difficulty] || DEPTH_BY_DIFFICULTY[5];
+    var aiPlayer = getCurrentPlayer(board);
+    var bestColumn = validColumns[0];
+    var bestScore = -Infinity;
+
+    for (var i = 0; i < validColumns.length; i += 1) {
+      var col = validColumns[i];
+      var row = findLowestRow(board, col);
+      if (row === -1) continue;
+
+      board[row][col] = aiPlayer;
+      var score = minimax(board, depth - 1, -Infinity, Infinity, false, aiPlayer);
+      board[row][col] = 0;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestColumn = col;
+      }
+    }
+
+    return bestColumn;
+  }
+
+  window.ConnectFourAI = {
+    evaluateBoard: evaluateBoard,
+    minimax: minimax,
+    getAIMove: getAIMove
+  };
+})();
+
+/* ===== Audio Module ===== */
+(function() {
+  var audioContext = null;
+  var soundEnabled = true;
+
+  function getAudioContext() {
+    if (typeof window === 'undefined') return null;
+
+    var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+
+    if (!audioContext || audioContext.state === 'closed') {
+      audioContext = new AudioContextClass();
+    }
+
+    return audioContext;
+  }
+
+  function schedulePlayback(playback) {
+    if (!soundEnabled) return;
+
+    var context = getAudioContext();
+    if (!context) return;
+
+    var startPlayback = function() { playback(context, context.currentTime); };
+
+    if (context.state === 'suspended') {
+      context.resume().then(startPlayback).catch(function() {});
+      return;
+    }
+
+    startPlayback();
+  }
+
+  function createVoice(context, opts) {
+    var type = opts.type || 'sine';
+    var frequency = opts.frequency;
+    var endFrequency = opts.endFrequency !== undefined ? opts.endFrequency : frequency;
+    var startTime = opts.startTime;
+    var duration = opts.duration;
+    var peakGain = opts.peakGain !== undefined ? opts.peakGain : 0.15;
+    var endGain = opts.endGain !== undefined ? opts.endGain : 0.0001;
+    var detune = opts.detune || 0;
+    var attack = opts.attack !== undefined ? opts.attack : 0.005;
+
+    var oscillator = context.createOscillator();
+    var gainNode = context.createGain();
+    var stopTime = startTime + duration;
+
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, startTime);
+    oscillator.frequency.exponentialRampToValueAtTime(
+      Math.max(endFrequency, 1),
+      stopTime
+    );
+    oscillator.detune.setValueAtTime(detune, startTime);
+
+    gainNode.gain.setValueAtTime(0.0001, startTime);
+    gainNode.gain.linearRampToValueAtTime(peakGain, startTime + attack);
+    gainNode.gain.exponentialRampToValueAtTime(endGain, stopTime);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(context.destination);
+
+    oscillator.start(startTime);
+    oscillator.stop(stopTime);
+    oscillator.addEventListener('ended', function() {
+      oscillator.disconnect();
+      gainNode.disconnect();
+    }, { once: true });
+  }
+
+  function playDrop() {
+    schedulePlayback(function(context, startTime) {
+      createVoice(context, {
+        type: 'triangle',
+        frequency: 340,
+        endFrequency: 210,
+        startTime: startTime,
+        duration: 0.14,
+        peakGain: 0.16,
+        attack: 0.002
+      });
+
+      createVoice(context, {
+        type: 'square',
+        frequency: 180,
+        endFrequency: 140,
+        startTime: startTime,
+        duration: 0.09,
+        peakGain: 0.045,
+        attack: 0.001
+      });
+    });
+  }
+
+  function playWin() {
+    var notes = [523.25, 659.25, 783.99, 1046.5];
+
+    schedulePlayback(function(context, startTime) {
+      notes.forEach(function(note, index) {
+        var noteStart = startTime + index * 0.14;
+        var isFinalNote = index === notes.length - 1;
+
+        createVoice(context, {
+          type: 'triangle',
+          frequency: note,
+          endFrequency: isFinalNote ? note * 1.08 : note,
+          startTime: noteStart,
+          duration: isFinalNote ? 0.28 : 0.2,
+          peakGain: isFinalNote ? 0.14 : 0.12,
+          attack: 0.01
+        });
+
+        createVoice(context, {
+          type: 'sine',
+          frequency: note * 2,
+          endFrequency: note * 2,
+          startTime: noteStart,
+          duration: isFinalNote ? 0.22 : 0.16,
+          peakGain: 0.03,
+          attack: 0.01
+        });
+      });
+    });
+  }
+
+  function playInvalid() {
+    schedulePlayback(function(context, startTime) {
+      createVoice(context, {
+        type: 'sawtooth',
+        frequency: 120,
+        endFrequency: 96,
+        startTime: startTime,
+        duration: 0.2,
+        peakGain: 0.11,
+        attack: 0.004
+      });
+
+      createVoice(context, {
+        type: 'square',
+        frequency: 127,
+        endFrequency: 102,
+        startTime: startTime,
+        duration: 0.2,
+        peakGain: 0.05,
+        detune: 9,
+        attack: 0.003
+      });
+    });
+  }
+
+  function setSoundEnabled(enabled) {
+    soundEnabled = enabled;
+  }
+
+  function isSoundEnabled() {
+    return soundEnabled;
+  }
+
+  window.AudioModule = {
+    playDrop: playDrop,
+    playWin: playWin,
+    playInvalid: playInvalid,
+    setSoundEnabled: setSoundEnabled,
+    isSoundEnabled: isSoundEnabled
+  };
+})();
+
+/* ===== Board Renderer ===== */
+(function() {
+  var ROWS = 6;
+  var COLS = 7;
+  var PLAYER_VALUES_SET = { 0: true, 1: true, 2: true };
+
+  var boardApiState = null;
+
+  function createBoard(containerElement) {
+    if (!(containerElement instanceof Element)) {
+      throw new TypeError("createBoard requires a DOM element container");
+    }
+
+    var root = document.createElement("div");
+    root.className = "connect-four-board is-interactive";
+
+    var frame = document.createElement("div");
+    frame.className = "board-frame";
+
+    var previewRow = document.createElement("div");
+    previewRow.className = "preview-row";
+    previewRow.setAttribute("aria-hidden", "true");
+
+    var grid = document.createElement("div");
+    grid.className = "board-grid";
+    grid.setAttribute("role", "grid");
+    grid.setAttribute("aria-label", "Connect Four board");
+
+    var cells = [];
+    var pieces = [];
+    var previewPieces = [];
+
+    var r, c;
+    for (r = 0; r < ROWS; r += 1) {
+      cells.push(new Array(COLS));
+      pieces.push(new Array(COLS));
+    }
+
+    for (c = 0; c < COLS; c += 1) {
+      var previewCell = document.createElement("div");
+      previewCell.className = "preview-cell";
+      previewCell.dataset.col = String(c);
+
+      var previewPiece = document.createElement("div");
+      previewPiece.className = "piece";
+      previewCell.appendChild(previewPiece);
+      previewRow.appendChild(previewCell);
+      previewPieces.push(previewPiece);
+    }
+
+    for (r = 0; r < ROWS; r += 1) {
+      for (c = 0; c < COLS; c += 1) {
+        var cell = document.createElement("div");
+        cell.className = "cell";
+        cell.dataset.row = String(r);
+        cell.dataset.col = String(c);
+        cell.setAttribute("role", "gridcell");
+
+        var piece = document.createElement("div");
+        piece.className = "piece";
+        cell.appendChild(piece);
+        grid.appendChild(cell);
+
+        cells[r][c] = cell;
+        pieces[r][c] = piece;
+      }
+    }
+
+    frame.appendChild(previewRow);
+    frame.appendChild(grid);
+    root.appendChild(frame);
+
+    while (containerElement.firstChild) {
+      containerElement.removeChild(containerElement.firstChild);
+    }
+    containerElement.appendChild(root);
+
+    boardApiState = {
+      board: createEmptyBoard(),
+      cells: cells,
+      clickHandler: null,
+      container: containerElement,
+      frame: frame,
+      grid: grid,
+      highlightedKeys: {},
+      interactive: true,
+      pieces: pieces,
+      preview: { col: null, player: null },
+      previewPieces: previewPieces,
+      root: root,
+      activeDrop: null
+    };
+
+    root.addEventListener("click", handleBoardClick);
+
+    // Set up hover preview via mouseover on the board
+    root.addEventListener("mouseover", handleBoardHover);
+    root.addEventListener("mouseleave", function() {
+      if (boardApiState && boardApiState.interactive) {
+        clearHoverPreviewInternal();
+      }
+    });
+
+    renderStateInternal(boardApiState.board);
+
+    return root;
+  }
+
+  function handleBoardHover(event) {
+    var state = boardApiState;
+    if (!state || !state.interactive) return;
+
+    var columnElement = event.target.closest("[data-col]");
+    if (!columnElement || !state.root.contains(columnElement)) return;
+
+    var col = parseInt(columnElement.dataset.col, 10);
+    if (isNaN(col)) return;
+
+    // Use the preview player if set, otherwise do nothing
+    if (state.preview.player !== null) {
+      setHoverPreviewInternal(col, state.preview.player);
+    }
+  }
+
+  function renderStateInternal(board2D) {
+    var state = requireBoard();
+    var nextBoard = normalizeBoard(board2D);
+    state.board = nextBoard.map(function(row) { return row.slice(); });
+
+    for (var row = 0; row < ROWS; row += 1) {
+      for (var col = 0; col < COLS; col += 1) {
+        var piece = state.pieces[row][col];
+        setPieceAppearance(piece, nextBoard[row][col]);
+      }
+    }
+  }
+
+  function animateDropInternal(col, row, player) {
+    var state = requireBoard();
+    validateColumn(col);
+    validateRow(row);
+    validatePlayer(player, false);
+
+    if (state.activeDrop) {
+      state.activeDrop.cancel();
+    }
+
+    var previewCell = state.previewPieces[col].parentElement;
+    var targetCell = state.cells[row][col];
+    var targetPiece = state.pieces[row][col];
+
+    if (!previewCell || !targetCell) {
+      return Promise.reject(new Error("Board is missing the drop origin or target cell"));
+    }
+
+    var frameRect = state.frame.getBoundingClientRect();
+    var previewRect = previewCell.getBoundingClientRect();
+    var targetRect = targetCell.getBoundingClientRect();
+    var pieceSize = targetRect.width * 0.8;
+    var startCenterX = previewRect.left - frameRect.left + previewRect.width / 2;
+    var startCenterY = previewRect.top - frameRect.top + previewRect.height / 2;
+    var endCenterY = targetRect.top - frameRect.top + targetRect.height / 2;
+
+    var dropPiece = document.createElement("div");
+    dropPiece.className = "piece drop-piece " + playerClassName(player);
+    dropPiece.style.width = pieceSize + "px";
+    dropPiece.style.height = pieceSize + "px";
+    dropPiece.style.left = (startCenterX - pieceSize / 2) + "px";
+    dropPiece.style.top = (startCenterY - pieceSize / 2) + "px";
+    dropPiece.style.setProperty("--drop-distance", (endCenterY - startCenterY) + "px");
+
+    targetPiece.classList.add("is-hidden-for-animation");
+    targetPiece.dataset.suspended = "true";
+    state.frame.appendChild(dropPiece);
+
+    return new Promise(function(resolve) {
+      var finalize = function() {
+        cleanupDrop(state);
+        delete targetPiece.dataset.suspended;
+        targetPiece.classList.remove("is-hidden-for-animation");
+        setPieceAppearance(targetPiece, player);
+        state.board[row][col] = player;
+        resolve();
+      };
+
+      var cancel = function() {
+        cleanupDrop(state);
+        delete targetPiece.dataset.suspended;
+        targetPiece.classList.remove("is-hidden-for-animation");
+        resolve();
+      };
+
+      dropPiece.addEventListener("animationend", finalize, { once: true });
+      state.activeDrop = { cancel: cancel, dropPiece: dropPiece };
+    });
+  }
+
+  function highlightWinInternal(winCells) {
+    var state = requireBoard();
+    clearHighlightInternal();
+
+    for (var i = 0; i < winCells.length; i += 1) {
+      var row = winCells[i][0];
+      var col = winCells[i][1];
+      validateRow(row);
+      validateColumn(col);
+
+      state.cells[row][col].classList.add("winning");
+      state.highlightedKeys[keyFor(row, col)] = true;
+    }
+  }
+
+  function clearHighlightInternal() {
+    var state = requireBoard();
+
+    var keys = Object.keys(state.highlightedKeys);
+    for (var i = 0; i < keys.length; i += 1) {
+      var parts = keys[i].split(":");
+      var row = parseInt(parts[0], 10);
+      var col = parseInt(parts[1], 10);
+      state.cells[row][col].classList.remove("winning");
+    }
+
+    state.highlightedKeys = {};
+  }
+
+  function setHoverPreviewInternal(col, player) {
+    var state = requireBoard();
+    validateColumn(col);
+    validatePlayer(player, false);
+
+    // Clear all previews first
+    for (var i = 0; i < state.previewPieces.length; i += 1) {
+      setPieceAppearance(state.previewPieces[i], 0);
+    }
+
+    var previewPiece = state.previewPieces[col];
+    setPieceAppearance(previewPiece, player, true);
+    state.preview = { col: col, player: player };
+  }
+
+  function clearHoverPreviewInternal() {
+    var state = requireBoard();
+    for (var i = 0; i < state.previewPieces.length; i += 1) {
+      setPieceAppearance(state.previewPieces[i], 0);
+    }
+    state.preview = { col: null, player: state.preview.player };
+  }
+
+  function onColumnClickInternal(callback) {
+    var state = requireBoard();
+    if (callback !== null && typeof callback !== "function") {
+      throw new TypeError("onColumnClick expects a function or null");
+    }
+    state.clickHandler = callback;
+  }
+
+  function setInteractiveInternal(enabled) {
+    var state = requireBoard();
+    state.interactive = Boolean(enabled);
+    state.root.classList.toggle("is-interactive", state.interactive);
+    state.root.setAttribute("aria-disabled", String(!state.interactive));
+  }
+
+  function setPreviewPlayer(player) {
+    var state = requireBoard();
+    state.preview = { col: state.preview.col, player: player };
+  }
+
+  function handleBoardClick(event) {
+    var state = boardApiState;
+    if (!state || !state.interactive || typeof state.clickHandler !== "function") {
+      return;
+    }
+
+    var columnElement = event.target.closest("[data-col]");
+    if (!columnElement || !state.root.contains(columnElement)) {
+      return;
+    }
+
+    var col = parseInt(columnElement.dataset.col || "", 10);
+    if (isNaN(col)) return;
+
+    state.clickHandler(col);
+  }
+
+  function cleanupDrop(state) {
+    if (!state.activeDrop) return;
+    var dropPiece = state.activeDrop.dropPiece;
+    dropPiece.remove();
+    state.activeDrop = null;
+  }
+
+  function requireBoard() {
+    if (!boardApiState) {
+      throw new Error("Board has not been initialized. Call createBoard(containerElement) first.");
+    }
+    return boardApiState;
+  }
+
+  function normalizeBoard(board2D) {
+    if (!Array.isArray(board2D) || board2D.length !== ROWS) {
+      throw new TypeError("board2D must be a " + ROWS + "x" + COLS + " array");
+    }
+
+    return board2D.map(function(row) {
+      if (!Array.isArray(row) || row.length !== COLS) {
+        throw new TypeError("board2D must be a " + ROWS + "x" + COLS + " array");
+      }
+      return row.map(function(value) {
+        validatePlayer(value, true);
+        return value;
+      });
+    });
+  }
+
+  function createEmptyBoard() {
+    var board = [];
+    for (var r = 0; r < ROWS; r += 1) {
+      var row = [];
+      for (var c = 0; c < COLS; c += 1) {
+        row.push(0);
+      }
+      board.push(row);
+    }
+    return board;
+  }
+
+  function setPieceAppearance(pieceElement, player, isPreview) {
+    pieceElement.classList.remove("player1", "player2", "preview");
+
+    if (!pieceElement.dataset.suspended) {
+      pieceElement.classList.remove("is-hidden-for-animation");
+    }
+
+    if (player === 1 || player === 2) {
+      pieceElement.classList.add(playerClassName(player));
+      if (isPreview) {
+        pieceElement.classList.add("preview");
+      }
+    }
+  }
+
+  function playerClassName(player) {
+    return player === 1 ? "player1" : "player2";
+  }
+
+  function validateColumn(col) {
+    if (!Number.isInteger(col) || col < 0 || col >= COLS) {
+      throw new RangeError("Column must be an integer between 0 and " + (COLS - 1));
+    }
+  }
+
+  function validateRow(row) {
+    if (!Number.isInteger(row) || row < 0 || row >= ROWS) {
+      throw new RangeError("Row must be an integer between 0 and " + (ROWS - 1));
+    }
+  }
+
+  function validatePlayer(player, allowEmpty) {
+    if (allowEmpty === undefined) allowEmpty = true;
+    if (!PLAYER_VALUES_SET[player] || (!allowEmpty && player === 0)) {
+      throw new RangeError("Player must be 1 or 2");
+    }
+  }
+
+  function keyFor(row, col) {
+    return row + ":" + col;
+  }
+
+  window.BoardRenderer = {
+    createBoard: createBoard,
+    renderState: renderStateInternal,
+    animateDrop: animateDropInternal,
+    highlightWin: highlightWinInternal,
+    clearHighlight: clearHighlightInternal,
+    setHoverPreview: setHoverPreviewInternal,
+    clearHoverPreview: clearHoverPreviewInternal,
+    onColumnClick: onColumnClickInternal,
+    setInteractive: setInteractiveInternal,
+    setPreviewPlayer: setPreviewPlayer
+  };
+})();
+
+/* ===== App Logic ===== */
+(function() {
+  var DIFFICULTY_LABELS = ['Easy', 'Medium', 'Hard', 'Expert', 'Master'];
+  var PLAYER_NAMES = { 1: 'Red', 2: 'Yellow' };
+
+  var elements = {
+    boardContainer: document.getElementById('board-container'),
+    difficulty: document.getElementById('difficulty'),
+    difficultyGroup: document.getElementById('difficulty-group'),
+    difficultyOutput: document.getElementById('difficulty-output'),
+    modeInputs: Array.prototype.slice.call(document.querySelectorAll('input[name="mode"]')),
+    newGame: document.getElementById('new-game'),
+    scoreDraws: document.getElementById('score-draws'),
+    scoreP1: document.getElementById('score-p1'),
+    scoreP2: document.getElementById('score-p2'),
+    status: document.getElementById('status'),
+    soundToggle: document.getElementById('sound-toggle')
+  };
+
+  // Create the board DOM
+  BoardRenderer.createBoard(elements.boardContainer);
+
+  // Game engine instance
+  var engine = new GameEngine();
+
+  var scores = { 1: 0, 2: 0, draws: 0 };
+  var mode = getSelectedMode();
+  var difficulty = Number(elements.difficulty.value);
+  var aiTimerId = null;
+  var gameSessionId = 0;
+  var isResolvingMove = false;
+  var gameOver = false;
+
+  bindEvents();
+  updateDifficultyUI();
+  updateScoreboard();
+  startGame();
+
+  function bindEvents() {
+    BoardRenderer.onColumnClick(function(column) {
+      if (!canHumanPlay()) return;
+      handleMove(column, false);
+    });
+
+    elements.modeInputs.forEach(function(input) {
+      input.addEventListener('change', function() {
+        mode = getSelectedMode();
+        updateDifficultyUI();
+        startGame();
+      });
+    });
+
+    elements.difficulty.addEventListener('input', function() {
+      difficulty = Number(elements.difficulty.value);
+      updateDifficultyUI();
+    });
+
+    elements.newGame.addEventListener('click', function() {
+      startGame();
+    });
+
+    elements.soundToggle.addEventListener('click', function() {
+      var isOn = AudioModule.isSoundEnabled();
+      AudioModule.setSoundEnabled(!isOn);
+      elements.soundToggle.textContent = !isOn ? 'Sound: On' : 'Sound: Off';
+      elements.soundToggle.classList.toggle('is-on', !isOn);
+    });
+  }
+
+  function getSelectedMode() {
+    for (var i = 0; i < elements.modeInputs.length; i += 1) {
+      if (elements.modeInputs[i].checked) return elements.modeInputs[i].value;
+    }
+    return 'pvp';
+  }
+
+  function startGame() {
+    cancelPendingAI();
+    gameSessionId += 1;
+    isResolvingMove = false;
+    gameOver = false;
+
+    engine.reset();
+
+    BoardRenderer.clearHighlight();
+    BoardRenderer.renderState(engine.getBoard());
+    syncStatus();
+    syncBoardInteractivity();
+  }
+
+  function syncBoardInteractivity() {
+    var humanTurn = canHumanPlay() && !isResolvingMove;
+    BoardRenderer.setInteractive(humanTurn);
+
+    if (humanTurn) {
+      BoardRenderer.setPreviewPlayer(engine.getCurrentPlayer());
+      return;
+    }
+
+    BoardRenderer.clearHoverPreview();
+
+    if (!isResolvingMove && !gameOver && mode === 'pvai' && engine.getCurrentPlayer() === 2) {
+      queueAIMove();
+    }
+  }
+
+  function canHumanPlay() {
+    if (gameOver) return false;
+    if (mode === 'pvp') return true;
+    return engine.getCurrentPlayer() === 1;
+  }
+
+  function updateDifficultyUI() {
+    var label = DIFFICULTY_LABELS[difficulty - 1] || DIFFICULTY_LABELS[0];
+    elements.difficultyOutput.textContent = difficulty + ' \u00b7 ' + label;
+    elements.difficultyGroup.classList.toggle('is-hidden', mode !== 'pvai');
+  }
+
+  function updateScoreboard() {
+    elements.scoreP1.textContent = String(scores[1]);
+    elements.scoreP2.textContent = String(scores[2]);
+    elements.scoreDraws.textContent = String(scores.draws);
+  }
+
+  function syncStatus(message) {
+    var current = engine.getCurrentPlayer();
+
+    if (message) {
+      elements.status.textContent = message;
+    } else {
+      var suffix = (mode === 'pvai' && current === 2) ? ' \u00b7 AI thinking' : '';
+      elements.status.textContent = PLAYER_NAMES[current] + "'s turn" + suffix;
+    }
+
+    elements.status.dataset.player = gameOver ? '0' : String(current);
+  }
+
+  function handleMove(column, fromAI) {
+    if (gameOver || isResolvingMove) return;
+
+    var movingPlayer = engine.getCurrentPlayer();
+    var result = engine.makeMove(column);
+
+    if (!result) {
+      if (!fromAI) {
+        AudioModule.playInvalid();
+        syncStatus('Column full. Choose another lane.');
+      }
+      return;
+    }
+
+    cancelPendingAI();
+    isResolvingMove = true;
+    var sessionId = gameSessionId;
+
+    AudioModule.playDrop();
+    syncBoardInteractivity();
+
+    BoardRenderer.animateDrop(result.col, result.row, movingPlayer).then(function() {
+      if (sessionId !== gameSessionId) return;
+
+      BoardRenderer.renderState(engine.getBoard());
+
+      var winResult = engine.checkWin();
+
+      if (winResult) {
+        gameOver = true;
+        isResolvingMove = false;
+        scores[winResult.player] += 1;
+        updateScoreboard();
+        BoardRenderer.highlightWin(winResult.cells);
+        AudioModule.playWin();
+        syncStatus(PLAYER_NAMES[winResult.player] + ' wins!');
+        syncBoardInteractivity();
+        return;
+      }
+
+      if (engine.getValidMoves().length === 0) {
+        gameOver = true;
+        isResolvingMove = false;
+        scores.draws += 1;
+        updateScoreboard();
+        syncStatus('Draw game. Board full.');
+        syncBoardInteractivity();
+        return;
+      }
+
+      isResolvingMove = false;
+      syncStatus();
+      syncBoardInteractivity();
+    });
+  }
+
+  function queueAIMove() {
+    cancelPendingAI();
+    syncStatus();
+
+    aiTimerId = window.setTimeout(function() {
+      aiTimerId = null;
+
+      if (gameOver || mode !== 'pvai' || engine.getCurrentPlayer() !== 2) return;
+
+      // Clone the board for the AI to search on (minimax mutates the board)
+      var boardClone = engine.cloneBoard();
+      var move = ConnectFourAI.getAIMove(boardClone, difficulty);
+
+      if (typeof move !== 'number' || move < 0) {
+        gameOver = true;
+        scores.draws += 1;
+        updateScoreboard();
+        syncStatus('Draw game. No valid AI move.');
+        syncBoardInteractivity();
+        return;
+      }
+
+      handleMove(move, true);
+    }, 420);
+  }
+
+  function cancelPendingAI() {
+    if (aiTimerId !== null) {
+      window.clearTimeout(aiTimerId);
+      aiTimerId = null;
+    }
+  }
+})();
+    </script>
+  </body>
+</html>
