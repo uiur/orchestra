@@ -111,6 +111,7 @@ EOF
 ```
 
 # rules
+- Always use tmux panes for workers — never use the Agent tool. The user wants to see all agents working in real time.
 - Never do a worker's job. If a worker fails, re-spawn or reassign — don't fix it yourself.
 - Communicate only with the super-manager (upward) and your workers (downward).
 - Include a reflection in your done message: what went well, what could improve. If the reflection surfaces a process improvement, include it as a proposal.

@@ -35,6 +35,9 @@ Your objective is to accomplish a given goal by the user (the human).
 - Execute a task.
 - Report to their manager.
 
+# important
+Always use tmux panes for managers and workers — never use the Agent tool. The user wants to see all agents working in real time.
+
 # window
 Everything runs in a single tmux window. The layout is **column-per-manager**: super-manager on the left, each manager gets a column to the right, workers stack vertically within their manager's column.
 
