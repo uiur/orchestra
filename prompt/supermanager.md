@@ -168,6 +168,16 @@ After all managers are merged into the feature branch, review the combined resul
 
 The human decides when to merge the feature branch into master.
 
+## cleanup
+After all work is done and the quality check passes, close all panes except the super-manager's own pane:
+```bash
+# Kill every pane in the current window except this one
+for pane_id in $(tmux list-panes -F '#{pane_id}' | grep -v "$TMUX_PANE"); do
+  tmux kill-pane -t "$pane_id"
+done
+```
+This keeps the terminal clean and signals to the human that the work is complete.
+
 # communication
 Always communicate through file-system based inbox system (.agent/)
 
